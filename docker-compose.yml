@@ -8,3 +8,5 @@ services:
       dockerfile: "./nats/Dockerfile"
     depends_on:
       - nats
+    volumes:
+      - ".:/opt/code"

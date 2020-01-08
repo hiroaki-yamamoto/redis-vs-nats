@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"sort"
 	"time"
 
@@ -42,4 +44,15 @@ func main() {
 		}(),
 	}
 	fmt.Print(res.String())
+	const fname = "/opt/code/nats.json"
+	f, err := os.Create(fname)
+	if err != nil {
+		panic(nil)
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+	if err := enc.Encode(res); err != nil {
+		panic(err)
+	}
+	println("The result file is saved at: ", fname)
 }

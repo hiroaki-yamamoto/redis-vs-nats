@@ -10,4 +10,6 @@ RUN go build -o /tmp/build ./nats
 
 FROM alpine
 COPY --from=build /tmp/build /bin/app
+RUN mkdir /opt/code
+VOLUME [ "/opt/code" ]
 ENTRYPOINT [ "app" ]
