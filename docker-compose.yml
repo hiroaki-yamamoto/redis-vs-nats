@@ -1,0 +1,10 @@
+version: '3.7'
+services:
+  nats:
+    image: nats
+  nats-test:
+    build:
+      context: "."
+      dockerfile: "./nats/Dockerfile"
+    depends_on:
+      - nats
