@@ -25,9 +25,7 @@ func measureLatency(cli *redis.Client, len int64) (
 		msg := <-sub.Channel()
 		end := time.Now()
 		if bytes.Compare([]byte(msg.Payload), data) != 0 {
-			errCh <- errors.New(
-				"The message is differ from the expected message",
-			)
+			errCh <- errors.New("The message is differ from the expected message")
 		}
 		endTimeCh <- end
 	}()
