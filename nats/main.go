@@ -25,12 +25,11 @@ func main() {
 		var sum time.Duration
 		fmt.Printf("Starting Iteration %d", i)
 		for j := 0; j < 250; j++ {
-			var mres time.Duration
-			mres, err = measureLatency(con, 100000)
+			res, err := measureLatency(con, 100000)
 			if err != nil {
 				panic(err)
 			}
-			sum += mres
+			sum += res
 		}
 		fmt.Println("...Done")
 		latencyResults[i] = sum
