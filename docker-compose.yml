@@ -7,7 +7,8 @@ services:
   nats-test:
     build:
       context: "."
-      dockerfile: "./nats/Dockerfile"
+      args:
+        PKGNAME: "nats"
     depends_on:
       - nats
     volumes:
@@ -15,7 +16,8 @@ services:
   redis-test:
     build:
       context: "."
-      dockerfile: "./redis/Dockerfile"
+      args:
+        PKGNAME: "redis"
     depends_on:
       - redis
     volumes:

@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"errors"
-	"math/rand"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -12,36 +12,37 @@ import (
 func measureLatency(con *nats.Conn, len int) (
 	dur time.Duration, err error,
 ) {
-	data := make([]byte, len)
+	var data []byte
 	if _, err = rand.Read(data); err != nil {
 		return
 	}
-	endTimeCh := make(chan time.Time)
+	recvCh := make(chan *nats.Msg)
 	errCh := make(chan error)
 	defer close(errCh)
-	defer close(endTimeCh)
-	sub, err := con.Subscribe("test", func(msg *nats.Msg) {
-		t := time.Now()
+	defer close(recvCh)
+	sub, err := con.ChanSubscribe("test", recvCh)
+	if err != nil {
+		return
+	}
+	defer sub.Unsubscribe()
+	startTime := time.Now()
+	go func() {
+		if err := con.Publish("test", []byte(data)); err != nil {
+			errCh <- err
+			return
+		}
+	}()
+
+	select {
+	case msg := <-recvCh:
+		end := time.Now()
 		if bytes.Compare(msg.Data, data) != 0 {
 			errCh <- errors.New(
 				"The received data was differ from the expected",
 			)
 			return
 		}
-		endTimeCh <- t
-	})
-	if err != nil {
-		errCh <- err
-	}
-	defer sub.Unsubscribe()
-	startTime := time.Now()
-	if err = con.Publish("test", data); err != nil {
-		return
-	}
-
-	select {
-	case endTime := <-endTimeCh:
-		dur = endTime.Sub(startTime)
+		dur = end.Sub(startTime)
 		return
 	case err = <-errCh:
 		return
