@@ -2,17 +2,18 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
+	"context"
 	"errors"
+	"math/rand"
 	"time"
 
 	"github.com/nats-io/nats.go"
 )
 
-func measureLatency(con *nats.Conn, len int) (
+func measureLatency(ctx context.Context, con *nats.Conn, sz int) (
 	dur time.Duration, err error,
 ) {
-	var data []byte
+	data := make([]byte, sz)
 	if _, err = rand.Read(data); err != nil {
 		return
 	}
@@ -45,6 +46,10 @@ func measureLatency(con *nats.Conn, len int) (
 		dur = end.Sub(startTime)
 		return
 	case err = <-errCh:
+		return
+	case <-ctx.Done():
+		end := time.Now()
+		dur = end.Sub(startTime)
 		return
 	}
 }

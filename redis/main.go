@@ -3,10 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"math/rand"
 	"os"
-	"sort"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -29,34 +27,14 @@ func main() {
 	latencyResults := make([]time.Duration, 2000)
 	for i := range latencyResults {
 		fmt.Printf("Starting Iteration %d", i)
-		var sum time.Duration
-		for j := 0; j < 250; j++ {
-			var mres time.Duration
-			mres, err = measureLatency(con, 100000)
-			if err != nil {
-				panic(err)
-			}
-			sum += mres
+		latencyResults[i], err = measureLatency(con, 100000)
+		if err != nil {
+			panic(err)
 		}
-		latencyResults[i] = sum
 		fmt.Println("...Done")
 	}
-	sort.Slice(latencyResults, func(i, j int) bool {
-		return int64(latencyResults[i]) < int64(latencyResults[j])
-	})
-	res := data.Result{
-		Min: latencyResults[0],
-		Max: latencyResults[len(latencyResults)-1],
-		Avg: func() time.Duration {
-			var res = big.NewFloat(0)
-			for _, v := range latencyResults {
-				res = res.Add(res, big.NewFloat(float64(v)))
-			}
-			res.Quo(res, big.NewFloat(float64(len(latencyResults))))
-			v, _ := res.Int64()
-			return time.Duration(v)
-		}(),
-	}
+	res := &data.Result{}
+	res.SetData(latencyResults)
 	fmt.Print(res.String())
 	const fname = "/opt/code/redis.json"
 	f, err := os.Create(fname)

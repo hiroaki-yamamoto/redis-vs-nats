@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"math/rand"
 	"os"
 	"sort"
@@ -22,34 +22,21 @@ func main() {
 	}
 	latencyResults := make([]time.Duration, 2000)
 	for i := range latencyResults {
-		var sum time.Duration
 		fmt.Printf("Starting Iteration %d", i)
-		for j := 0; j < 250; j++ {
-			res, err := measureLatency(con, 100000)
-			if err != nil {
-				panic(err)
-			}
-			sum += res
+		ctx, stop := context.WithTimeout(context.Background(), 10*time.Second)
+		defer stop()
+		res, err := measureLatency(ctx, con, 100000)
+		if err != nil {
+			panic(err)
 		}
+		latencyResults[i] = res
 		fmt.Println("...Done")
-		latencyResults[i] = sum
 	}
 	sort.Slice(latencyResults, func(i, j int) bool {
 		return int64(latencyResults[i]) < int64(latencyResults[j])
 	})
-	res := data.Result{
-		Min: latencyResults[0],
-		Max: latencyResults[len(latencyResults)-1],
-		Avg: func() time.Duration {
-			var res = big.NewFloat(0)
-			for _, v := range latencyResults {
-				res = res.Add(res, big.NewFloat(float64(v)))
-			}
-			res.Quo(res, big.NewFloat(float64(len(latencyResults))))
-			v, _ := res.Int64()
-			return time.Duration(v)
-		}(),
-	}
+	res := &data.Result{}
+	res.SetData(latencyResults)
 	fmt.Print(res.String())
 	const fname = "/opt/code/nats.json"
 	f, err := os.Create(fname)

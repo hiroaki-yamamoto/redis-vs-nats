@@ -2,26 +2,27 @@ package main
 
 import (
 	"errors"
+	"log"
 	"math/rand"
 	"time"
 
 	"github.com/go-redis/redis/v7"
 )
 
-func measureLatency(cli *redis.Client, len int) (
+func measureLatency(cli *redis.Client, sz int) (
 	dur time.Duration, err error,
 ) {
-	var data []byte
+	data := make([]byte, sz)
 	if _, err = rand.Read(data); err != nil {
 		return
 	}
 	txt := string(data)
 	errCh := make(chan error)
+	defer close(errCh)
 	sub := cli.Subscribe("test")
 	defer sub.Close()
 	startTime := time.Now()
 	go func() {
-		defer close(errCh)
 		if _, err = cli.Publish("test", txt).Result(); err != nil {
 			errCh <- err
 			return
@@ -37,6 +38,7 @@ func measureLatency(cli *redis.Client, len int) (
 		dur = end.Sub(startTime)
 		return
 	case err = <-errCh:
+		log.Println(err)
 		return
 	}
 }
