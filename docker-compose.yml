@@ -4,21 +4,13 @@ services:
     image: nats
   redis:
     image: redis:alpine
-  nats-test:
+  test:
     build:
       context: "."
       args:
         PKGNAME: "nats"
     depends_on:
       - nats
-    volumes:
-      - ".:/opt/code"
-  redis-test:
-    build:
-      context: "."
-      args:
-        PKGNAME: "redis"
-    depends_on:
       - redis
     volumes:
       - ".:/opt/code"
