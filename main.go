@@ -1,20 +1,28 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
 	"github.com/hiroaki-yamamoto/redis-vs-nats/config"
+	d "github.com/hiroaki-yamamoto/redis-vs-nats/data"
+	natsBench "github.com/hiroaki-yamamoto/redis-vs-nats/nats"
+	"github.com/nats-io/nats.go"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
 var rootFlags *flag.FlagSet
 
+const natsAddr = "nats://nats:4222"
+const redisAddr = "redis:6379"
+
 // BenchmarkInterface indicates an interface to measure message query.
 type BenchmarkInterface interface {
-	Measure() (itrDur time.Duration, err error)
+	Measure() (dur []time.Duration, err error)
 }
 
 func init() {
@@ -41,5 +49,29 @@ func main() {
 	if err := viper.Unmarshal(&cfg); err != nil {
 		panic(err)
 	}
-
+	rootCtx := context.Background()
+	var bench BenchmarkInterface
+	switch cfg.Target {
+	case "nats":
+		if conn, err := nats.Connect(natsAddr); err == nil {
+			bench = &natsBench.Benchmark{
+				Ctx:      rootCtx,
+				NumItr:   cfg.NumIteration,
+				NumTrial: cfg.NumTrial,
+				BufSize:  cfg.BufSize,
+				Con:      conn,
+			}
+		} else {
+			panic(err)
+		}
+	default:
+		panic(fmt.Sprintf("Unspecified Target: %s", cfg.Target))
+	}
+	if dur, err := bench.Measure(); err == nil {
+		res := &d.Result{}
+		res.SetData(dur)
+		fmt.Println(res.String())
+	} else {
+		panic(err)
+	}
 }

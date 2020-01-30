@@ -1,8 +1,10 @@
 package nats
 
-import "github.com/nats-io/nats.go"
+import (
+	"context"
 
-import "context"
+	"github.com/nats-io/nats.go"
+)
 
 // Benchmark represents a benchmark class of nats.
 type Benchmark struct {

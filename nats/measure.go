@@ -5,21 +5,35 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/schollz/progressbar/v2"
 )
 
-// Measure starts the benchmark.
+// Measure starts the benchmark
 func (me *Benchmark) Measure() (dur []time.Duration, err error) {
 	ret := make([]time.Duration, me.NumItr)
+	var bar *progressbar.ProgressBar
+	if me.NumTrial < 2 {
+		bar = progressbar.New(len(ret))
+	}
 	for i := range ret {
 		var itrDur time.Duration
-		for j := 0; j < me.NumTrial; i++ {
+		var trBar *progressbar.ProgressBar
+		if me.NumTrial > 1 {
+			trBar = progressbar.NewOptions(
+				me.NumTrial,
+				progressbar.OptionSetDescription(fmt.Sprintf("Iteration: %v", i)),
+			)
+		}
+		for j := 0; j < me.NumTrial; j++ {
 			err = func() (trErr error) {
 				ctx, stop := context.WithTimeout(me.Ctx, 1*time.Second)
 				defer stop()
-				if trDur, trErr := me.measure(ctx); trErr == nil {
+				var trDur time.Duration
+				if trDur, trErr = me.measure(ctx); trErr == nil {
 					itrDur += trDur
 				}
 				return
@@ -27,8 +41,20 @@ func (me *Benchmark) Measure() (dur []time.Duration, err error) {
 			if err != nil {
 				return
 			}
+			if trBar != nil {
+				trBar.Add(1)
+			}
+		}
+		if trBar != nil {
+			fmt.Println()
+		}
+		if bar != nil {
+			bar.Add(1)
 		}
 		ret[i] = itrDur
+	}
+	if bar != nil {
+		fmt.Println()
 	}
 	dur = ret
 	return
