@@ -2,14 +2,17 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/hiroaki-yamamoto/redis-vs-nats/config"
 	d "github.com/hiroaki-yamamoto/redis-vs-nats/data"
 	natsBench "github.com/hiroaki-yamamoto/redis-vs-nats/nats"
+	redisBench "github.com/hiroaki-yamamoto/redis-vs-nats/redis"
 	"github.com/nats-io/nats.go"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -64,9 +67,34 @@ func main() {
 		} else {
 			panic(err)
 		}
+		break
+	case "redis":
+		cli := redis.NewClient(&redis.Options{
+			Addr:     redisAddr,
+			Password: "",
+			DB:       0,
+		})
+		if _, err := cli.Ping().Result(); err != nil {
+			panic(err)
+		}
+		bench = &redisBench.Benchmark{
+			Ctx:      rootCtx,
+			Con:      cli,
+			NumItr:   cfg.NumIteration,
+			NumTrial: cfg.NumTrial,
+			BufSize:  cfg.BufSize,
+		}
+		break
 	default:
 		panic(fmt.Sprintf("Unspecified Target: %s", cfg.Target))
 	}
+	fmt.Println("=====Config=====")
+	if cfgPret, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+		fmt.Println(string(cfgPret))
+	} else {
+		panic(err)
+	}
+	fmt.Println("================")
 	if dur, err := bench.Measure(); err == nil {
 		res := &d.Result{}
 		res.SetData(dur)
