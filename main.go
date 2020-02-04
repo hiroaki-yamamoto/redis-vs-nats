@@ -31,25 +31,21 @@ type BenchmarkInterface interface {
 func init() {
 	rootFlags = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	rootFlags.String(
-		"target", "nats", "[nats|redis] target message queue benchmark",
+		"f", "/etc/redis-vs-nats/nats-single.yml",
+		"The path of the configuration file",
 	)
-	rootFlags.Int("numTrial", 1, "The number of trial per a iteration")
-	rootFlags.Int(
-		"numIteration", 2000,
-		"The number of iteration. (i.e. the sum of trial is numTrial x inum)",
-	)
-	rootFlags.Int("bufSize", 1048576, "")
 }
 
 func main() {
-	var cfg config.Flags
 	pflag.CommandLine.AddGoFlagSet(rootFlags)
 	pflag.Parse()
 
 	if err := viper.BindPFlags(pflag.CommandLine); err != nil {
 		panic(err)
 	}
-	if err := viper.Unmarshal(&cfg); err != nil {
+	cfgPath := viper.GetString("f")
+	cfg, err := config.New(cfgPath)
+	if err != nil {
 		panic(err)
 	}
 	rootCtx := context.Background()

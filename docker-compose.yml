@@ -14,3 +14,4 @@ services:
       - redis
     volumes:
       - ".:/opt/code"
+      - "./etc:/etc/redis-vs-nats"
