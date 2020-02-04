@@ -14,4 +14,4 @@ services:
       - redis
     volumes:
       - ".:/opt/code"
-      - "./etc:/etc/bench"
+      - "./etc/app:/etc/bench"
