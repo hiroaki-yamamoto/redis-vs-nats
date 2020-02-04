@@ -14,6 +14,7 @@ const (
 // Config represents a config.
 type Config struct {
 	Target       target
+	Addr         string
 	NumTrial     int
 	NumIteration int
 	BufSize      int

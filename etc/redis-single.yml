@@ -1,5 +1,5 @@
-target: nats  # In this benchmark, nats is used.
-addr: "nats://nats:4222"
+target: redis  # In this benchmark, nats is used.
+addr: redis:6379
 NumTrial: 1 # The number of trial
 NumIteration: 2000 # The number of iteration of trials
 BufSize: 1048576 # Size of bytes to send. (1048576 = 1MB)

@@ -20,9 +20,6 @@ import (
 
 var rootFlags *flag.FlagSet
 
-const natsAddr = "nats://nats:4222"
-const redisAddr = "redis:6379"
-
 // BenchmarkInterface indicates an interface to measure message query.
 type BenchmarkInterface interface {
 	Measure() (dur []time.Duration, err error)
@@ -31,7 +28,7 @@ type BenchmarkInterface interface {
 func init() {
 	rootFlags = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	rootFlags.String(
-		"f", "/etc/redis-vs-nats/nats-single.yml",
+		"f", "/etc/bench/nats-single.yml",
 		"The path of the configuration file",
 	)
 }
@@ -52,7 +49,7 @@ func main() {
 	var bench BenchmarkInterface
 	switch cfg.Target {
 	case "nats":
-		if conn, err := nats.Connect(natsAddr); err == nil {
+		if conn, err := nats.Connect(cfg.Addr); err == nil {
 			bench = &natsBench.Benchmark{
 				Ctx:      rootCtx,
 				NumItr:   cfg.NumIteration,
@@ -66,7 +63,7 @@ func main() {
 		break
 	case "redis":
 		cli := redis.NewClient(&redis.Options{
-			Addr:     redisAddr,
+			Addr:     cfg.Addr,
 			Password: "",
 			DB:       0,
 		})
